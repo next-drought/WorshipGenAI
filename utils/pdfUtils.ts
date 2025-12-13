@@ -136,6 +136,49 @@ export const extractTextFromPptx = async (file: File): Promise<string> => {
   }
 };
 
+export const fetchRemoteFile = async (url: string, filename: string, mimeType: string): Promise<File> => {
+  const fetchWithProxy = async (targetUrl: string): Promise<Blob> => {
+    try {
+      // Try direct fetch first
+      const response = await fetch(targetUrl);
+      if (response.ok) {
+        return await response.blob();
+      } else {
+        // If 404, file likely doesn't exist, no need to proxy
+        if (response.status === 404) {
+          throw new Error("File not found (404)");
+        }
+        throw new Error(`Status ${response.status}`);
+      }
+    } catch (error: any) {
+      // If it's a 404 or specific HTTP error, rethrow
+      if (error.message === "File not found (404)" || (error.message && error.message.includes("Status"))) {
+        throw error;
+      }
+
+      // If fetch failed (CORS often manifests as TypeError 'Failed to fetch'), try proxy
+      console.warn("Direct fetch failed (likely CORS). Retrying with proxy...", error);
+      
+      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+      const proxyResponse = await fetch(proxyUrl);
+      
+      if (!proxyResponse.ok) {
+        throw new Error(`Proxy error: ${proxyResponse.status}`);
+      }
+      
+      return await proxyResponse.blob();
+    }
+  };
+
+  try {
+    const blob = await fetchWithProxy(url);
+    return new File([blob], filename, { type: mimeType });
+  } catch (error: any) {
+    console.error("Fetch remote file error:", error);
+    throw new Error(`Could not download file. ${error.message}`);
+  }
+};
+
 export const readFileAsText = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
