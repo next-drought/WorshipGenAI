@@ -1,0 +1,28 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--build-arg'
+      - 'GEMINI_API_KEY=$_GEMINI_API_KEY'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/worshipgen-ai:$COMMIT_SHA'
+      - '.'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/worshipgen-ai:$COMMIT_SHA']
+
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'worshipgen-ai'
+      - '--image=gcr.io/$PROJECT_ID/worshipgen-ai:$COMMIT_SHA'
+      - '--region=us-central1'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+
+substitutions:
+  _GEMINI_API_KEY: ''
+
+images:
+  - 'gcr.io/$PROJECT_ID/worshipgen-ai:$COMMIT_SHA'
