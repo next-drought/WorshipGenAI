@@ -83,7 +83,7 @@ Ensure the layout is clean, readable, and professional.
 export const parseBulletin = async (text: string): Promise<any> => {
   const ai = getClient();
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-2.5-pro',
     contents: `${BULLETIN_PARSE_PROMPT}\n\n--- BULLETIN TEXT ---\n${text}`,
     config: {
       responseMimeType: 'application/json'
