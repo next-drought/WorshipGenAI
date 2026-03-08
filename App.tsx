@@ -1,19 +1,17 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { 
-  Upload, 
-  FileText, 
-  File as FileIcon, 
-  Loader2, 
-  CheckCircle2, 
-  Download, 
-  AlertCircle, 
+import React, { useState, useRef } from 'react';
+import {
+  Upload,
+  FileText,
+  File as FileIcon,
+  Loader2,
+  CheckCircle2,
+  Download,
+  AlertCircle,
   BookOpen,
-  Languages,
-  Globe,
-  RefreshCcw
+  Languages
 } from 'lucide-react';
 import { InputMode, ProcessingState, GeneratedProgram } from './types';
-import { extractTextFromPdf, extractTextFromDocx, extractTextFromPptx, readFileAsText, downloadFile, generateDocxHtml, fetchRemoteFile } from './utils/pdfUtils';
+import { extractTextFromPdf, extractTextFromDocx, extractTextFromPptx, readFileAsText, downloadFile, generateDocxHtml } from './utils/pdfUtils';
 import * as GeminiService from './services/geminiService';
 
 const App: React.FC = () => {
@@ -28,8 +26,6 @@ const App: React.FC = () => {
   // Processing
   const [status, setStatus] = useState<ProcessingState>({ step: 'idle', message: 'Ready to start', progress: 0 });
   const [result, setResult] = useState<GeneratedProgram | null>(null);
-  const [isFetchingBulletin, setIsFetchingBulletin] = useState(false);
-  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // Refs for auto-scrolling console/logs
   const resultRef = useRef<HTMLDivElement>(null);
@@ -39,53 +35,8 @@ const App: React.FC = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setter: (f: File | null) => void) => {
     if (e.target.files && e.target.files[0]) {
       setter(e.target.files[0]);
-      setFetchError(null); // Clear previous fetch errors if manual upload occurs
     }
   };
-
-  const getUpcomingSunday = (): Date => {
-    const today = new Date();
-    const day = today.getDay(); // 0 is Sunday
-    // if today is Sunday (0), diff is 0 (today). if Monday (1), diff is 6.
-    const diff = (7 - day) % 7; 
-    const nextSunday = new Date(today);
-    nextSunday.setDate(today.getDate() + diff);
-    return nextSunday;
-  };
-
-  const handleAutoFetchBulletin = async () => {
-    setIsFetchingBulletin(true);
-    setFetchError(null);
-    setBulletinFile(null); // Clear existing
-
-    try {
-      const targetDate = getUpcomingSunday();
-      const dateStr = targetDate.toISOString().split('T')[0];
-      // Construct URL: RCCA-worship-bulletin-{YYYY-MM-DD}.pdf
-      const url = `https://www.rcc-austin.org/wp-content/uploads/sunday_bulletin/RCCA-worship-bulletin-${dateStr}.pdf`;
-      const filename = `RCCA-worship-bulletin-${dateStr}.pdf`;
-
-      console.log(`Attempting to fetch bulletin from: ${url}`);
-      
-      // Use the utility to fetch the file
-      const file = await fetchRemoteFile(url, filename, 'application/pdf');
-      
-      setBulletinFile(file);
-      setDate(dateStr); // Auto-set the date field too
-      
-    } catch (error: any) {
-      console.error("Auto-fetch failed:", error);
-      setFetchError(error.message || "Failed to download bulletin.");
-    } finally {
-      setIsFetchingBulletin(false);
-    }
-  };
-
-  // Trigger auto-fetch on mount
-  useEffect(() => {
-    handleAutoFetchBulletin();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const processFiles = async () => {
     if (!bulletinFile || !sermonFile) {
@@ -273,31 +224,9 @@ const App: React.FC = () => {
               <div className="space-y-6">
                 {/* Bulletin Upload */}
                 <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="block text-sm font-medium text-slate-700">
-                      Worship Bulletin (PDF) <span className="text-red-500">*</span>
-                    </label>
-                    <button 
-                      onClick={handleAutoFetchBulletin}
-                      disabled={isFetchingBulletin}
-                      className="text-xs flex items-center text-indigo-600 hover:text-indigo-800 transition-colors"
-                      title="Try to download next Sunday's bulletin from website"
-                    >
-                      {isFetchingBulletin ? (
-                        <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                      ) : (
-                        <Globe className="h-3 w-3 mr-1" />
-                      )}
-                      Auto-Fetch
-                    </button>
-                  </div>
-
-                  {fetchError && (
-                    <div className="mb-2 p-2 bg-red-50 border border-red-100 rounded-md flex items-start text-xs text-red-600">
-                      <AlertCircle className="h-4 w-4 mr-1 shrink-0 mt-0.5" />
-                      <span>{fetchError} - Try uploading manually.</span>
-                    </div>
-                  )}
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Worship Bulletin (PDF) <span className="text-red-500">*</span>
+                  </label>
 
                   <div className={`relative border-2 border-dashed rounded-lg p-4 transition-colors ${bulletinFile ? 'border-green-300 bg-green-50' : 'border-slate-300 hover:border-indigo-400'}`}>
                     <input
