@@ -1,7 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 
 const getClient = () => {
-  const apiKey = process.env.API_KEY;
+  const apiKey = (window as any).__env?.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error("API Key is missing. Please set the API_KEY environment variable.");
   }
